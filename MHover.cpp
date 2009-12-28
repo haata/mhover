@@ -32,42 +32,42 @@
 #include "MHover.h"
 
 
-// Callback Variables
-static MHover* curMHoverInst = NULL;
-
-
 // Hook Callback **********************************************************************************
 
 LRESULT CALLBACK HookProc(int nCode, WPARAM wParam, LPARAM lParam )
 {
-    // Find Mouse Wheel Message
-    switch ( nCode )
-    {
-    case HC_ACTION:
-	switch ( wParam )
+	// Find Mouse Wheel Message
+	switch ( nCode )
 	{
-	case WM_MOUSEWHEEL:
-	    return curMHoverInst->verticalWheelScroll( wParam, lParam );
+	case HC_ACTION:
+		switch ( wParam )
+		{
+		case WM_MOUSEWHEEL:
+			return curMHoverInst->verticalWheelScroll( wParam, lParam );
+		}
+		break;
 	}
-	break;
-    }
 
-    return CallNextHookEx( 0, nCode, wParam, lParam);
+	return CallNextHookEx( 0, nCode, wParam, lParam);
 }
 
 
 // Constructor/Destructor *************************************************************************
 
-MHover::MHover( QObject *parent ) : QObject( parent )
+MHover::MHover( HINSTANCE hInstance )
 {
-    curMHoverInst = this;
+	// Event Loop Object
+	m_LoopEvent = CreateEvent( NULL, 1, 0, NULL );
 
-    m_hook = SetWindowsHookEx( WH_MOUSE_LL, HookProc, NULL, 0 );
+	// Mousewheel hook
+	m_hook = SetWindowsHookEx( WH_MOUSE_LL, HookProc, hInstance, 0 );
 }
 
 MHover::~MHover()
 {
-    curMHoverInst = NULL;
+	// Cleanup
+	curMHoverInst = NULL;
+	UnhookWindowsHookEx( m_hook );
 }
 
 
@@ -75,17 +75,22 @@ MHover::~MHover()
 
 HWND MHover::findHoveredWindow( int nSleep )
 {
-    // Mouse Position
-    POINT curPos;
+	// Mouse Position
+	POINT curPos;
 
-    // Couldn't get cursor position for some reason
-    if ( ::GetCursorPos( &curPos ) )
-	return ::WindowFromPoint( curPos );
+	// Couldn't get cursor position for some reason
+	if ( ::GetCursorPos( &curPos ) )
+		return ::WindowFromPoint( curPos );
 
-    return NULL;
+	return NULL;
 }
 
 LRESULT MHover::verticalWheelScroll( WPARAM wParam, LPARAM lParam )
 {
-    return ::SendMessage( findHoveredWindow( 10 ), WM_MOUSEWHEEL, ( (MSLLHOOKSTRUCT*)lParam )->mouseData, 0 );
+	// Send the scroll Message to the Window under the cursor
+	::SendMessage( findHoveredWindow( 10 ), WM_MOUSEWHEEL, ( (MSLLHOOKSTRUCT*)lParam )->mouseData, 0 );
+
+	// Important to send 1 (not 0) or the scroll event will progagate to some applications (e.g. Explorer)
+	return 1;
 }
+

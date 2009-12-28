@@ -31,26 +31,32 @@
 #ifndef __MHOVER_H
 #define __MHOVER_H
 
+// Defines
+#define _WIN32_WINNT 0x0501
+
 
 // Windows Includes
 #include <Windows.h>
 
-// Qt Includes
-#include <QObject>
 
-
-class MHover : public QObject
+class MHover
 {
-    Q_OBJECT
 public:
-     MHover( QObject *parent );
-    ~MHover();
+	MHover( HINSTANCE hInstance );
+	~MHover();
 
-    HWND findHoveredWindow( int nSleep );
-    LRESULT verticalWheelScroll( WPARAM wParam, LPARAM lParam );
+	HWND findHoveredWindow( int nSleep );
+	LRESULT verticalWheelScroll( WPARAM wParam, LPARAM lParam );
+
+	HANDLE m_LoopEvent;
 
 private:
-    HHOOK m_hook;
+	HHOOK m_hook;
 };
 
+// Callback Variables
+static MHover* curMHoverInst = NULL;
+
+
 #endif // __MHOVER_H
+

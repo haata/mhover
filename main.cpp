@@ -28,37 +28,29 @@
  * without prior written authorization.
  */
 
-// Qt Includes
-#include <QAction>
-#include <QApplication>
-#include <QIcon>
-#include <QMenu>
-#include <QSystemTrayIcon>
-
-// Local Includes
-#include "MHover.h"
+// DLL Declarations
+#pragma comment( lib, "hoverlib" )
+extern "C" void   set();
+extern "C" void unset();
 
 
-int main( int argc, char *argv[] )
+// Windows Includes
+#include <Windows.h>
+
+
+int __stdcall WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow )
 {
-    // Feeling too lazy today to make a native app
-    QApplication app( argc, argv );
+	// Prepare Mouse Wheel Detection and Redirection
+	set();
 
-    // Mouse Wheel Detection and Redirection
-    MHover hover( (QObject*)&app );
+	// Event Loop
+	MSG msg;
+	while ( GetMessage( &msg, NULL, 0, 0 ) )
+		DispatchMessage( &msg );
 
-    // System tray icon
-    QMenu menuTrayIcon;
-    QAction actionQuit( QObject::tr("&Exit"), &menuTrayIcon );
-    menuTrayIcon.addAction( &actionQuit );
+	// Clean up
+	unset();
 
-    QSystemTrayIcon trayIcon( QIcon("tray.ico"), (QObject*)&app );
-    trayIcon.setContextMenu( &menuTrayIcon );
-    trayIcon.setToolTip( QObject::tr("MHover - Mouse Wheel Redirection - This utility redirects mouse wheel events to the current window under the mouse cursor rather than to the current focused window.") );
-    trayIcon.show();
-
-    // GUI Events
-    QObject::connect( &actionQuit, SIGNAL( triggered() ), &app, SLOT( quit() ) );
-
-    return app.exec();
+	return 0;
 }
+
